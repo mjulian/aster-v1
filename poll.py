@@ -10,13 +10,28 @@ import struct
 ip = sys.argv[1]
 comm = sys.argv[2]
 
-objects = [('1.3.6.1.2.1.2.2.1.16', 'tx'),
-           ('1.3.6.1.2.1.2.2.1.10', 'rx'),
-          ('1.3.6.1.2.1.2.2.1.11', 'ucast'),
-          ('1.3.6.1.2.1.2.2.1.12', 'nucast'),
-           ('1.3.6.1.2.1.2.2.1.13', 'discards'),
-           ('1.3.6.1.2.1.2.2.1.14', 'errors'),
-           ('1.3.6.1.2.1.2.2.1.2', 'descr')]
+objects32 = [('1.3.6.1.2.1.2.2.1.10', 'rx'),               # Unit: Octets
+             ('1.3.6.1.2.1.2.2.1.11', 'rx-ucast'),         # Unit: Packets
+             ('1.3.6.1.2.1.2.2.1.13', 'rx-discards'),      # Unit: ???
+             ('1.3.6.1.2.1.2.2.1.14', 'rx-errors'),        # Unit: Octets
+             ('1.3.6.1.2.1.2.2.1.15', 'rx-unknownProtos'), # Unit: ???
+             ('1.3.6.1.2.1.2.2.1.16', 'tx'),               # Unit: Octets
+             ('1.3.6.1.2.1.2.2.1.17', 'tx-ucast'),         # Unit: Packets
+             ('1.3.6.1.2.1.2.2.1.19', 'tx-discards'),      # Unit: ???
+             ('1.3.6.1.2.1.2.2.1.20', 'tx-errors'),        # Unit: Octets
+             ('1.3.6.1.2.1.2.2.1.2', 'descr')]             # Interface name (not alias)
+
+objects64 = [('1.3.6.1.2.1.31.1.1.1.5', 'rx64'),           # Unit: Octets
+             ('1.3.6.1.2.1.31.1.1.1.6', 'rx-ucast64'),     # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.7', 'rx-mcast64'),     # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.8', 'rx-bcast64'),     # Unit: Packets
+             ('1.3.6.1.2.1.2.2.1.14', 'rx-errors'),        # Unit: Octets
+             ('1.3.6.1.2.1.31.1.1.1.9', 'tx64'),           # Unit: Octets
+             ('1.3.6.1.2.1.31.1.1.1.10', 'tx-ucast64'),    # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.11', 'tx-mcast64'),    # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.12', 'tx-bcast64'),    # Unit: Packets
+             ('1.3.6.1.2.1.2.2.1.20', 'tx-errors'),        # Unit: Octets
+             ('1.3.6.1.2.1.2.2.1.2', 'descr')]             # Interface name (not alias)
 
 ports = defaultdict(dict)
 
@@ -57,15 +72,6 @@ def correlate(snmpResults, context):
         ports[key][context] = values[context]
     return
 
-def sendToGraphite(message):
-    carbonServer = 'localhost'
-    carbonPort = 2003
-    sock = socket.socket()
-    sock.connect((carbonServer, carbonPort))
-    sock.sendall(message)
-    #print "Sending message: %s" % message
-    sock.close()
-
 def poll(ip, community, objects):
     startTime = time.time()
     for oid, context in objects:
@@ -91,24 +97,26 @@ def prepGraphite():
         for metricName, metricValue in values.items():
             if "descr" not in metricName:
                 tuples.append(('net.%s.%s.%s' % (hostname, key, metricName), (int(time.time()), metricValue)))
-   # print tuples
     package = pickle.dumps(tuples, 1)
     size = struct.pack('!L', len(package))
     sock.sendall(size)
     sock.sendall(package)
-#    sendToGraphite(message)
     endTime = time.time() - startTime
     print "Graphite Run time:", str(datetime.timedelta(seconds=endTime))
 
 if sys.argv[3] == "poll":
     while True:
-        print "Starting poll"
-        poll(ip, comm, objects)
-        prepGraphite()
-        print "Sleeping for ten seconds"
-        time.sleep(10)
+        try:
+            print "Starting poll"
+            poll(ip, comm, objects64)
+            prepGraphite()
+            print "Sleeping for ten seconds"
+            time.sleep(10)
+        except KeyboardInterrupt:
+           print "\n\n poll.py: Killed by user input.\n\n"
+           sys.exit()
 
 if sys.argv[3] == "getports":
-    availablePorts = cleanPortNames(snmpWalk(comm, ip, objects[6][0]))
+    availablePorts = cleanPortNames(snmpWalk(comm, ip, objects32[9][0]))
     for ports in availablePorts:
         print ports
