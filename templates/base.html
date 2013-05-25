@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Aster - A network traffic graphing system</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
+    <link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet" media="screen">
+    <style type="text/css">
+      body {
+        padding-top: 30px;
+      }
+    </style>
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
+    <script type="text/javascript">
+      $(function() {
+        $('#datetimepicker2-start').datetimepicker({
+          language: 'en',
+          pick12HourFormat: true
+        });
+      });
+      $(function() {
+        $('#datetimepicker2-end').datetimepicker({
+          language: 'en',
+          pick12HourFormat: true
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span12">
+          <div class="page-header">
+            <a href="{{ url_for('index') }}"><h1>Aster <small>A prettier and less prickly Cacti</small></h1></a>
+          </div>
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span2">
+          <div class="well">
+            <form class="form-search">
+              <input type="text" class="input-medium search-query" placeholder="Search">
+            </form>
+            <ul class="nav nav-list">
+              <li class="nav-header text-center"><h2>Hosts</h2></li>
+                {% for device in devices %}
+                <li class="dropdown-submenu">
+                  <a tabindex="-1">{{ device.hostname }}</a>
+                  <ul class="dropdown-menu">
+                  {% for iface in device.interfaces %}
+                    <li class="dropdown-submenu">
+                    <a tabindex="-2">{{ iface }}</a>
+                    <ul class="dropdown-menu">
+                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='throughput', timeperiod='1h') }}">Throughput</a></li>
+                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='errors', timeperiod='1h') }}">Errors</a></li>
+                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='discards', timeperiod='1h') }}">Discards</a></li>
+                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='unicast', timeperiod='1h') }}">Unicast</a></li>
+                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='broadcast', timeperiod='1h') }}">Broadcast</a></li>
+                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='multicast', timeperiod='1h') }}">Multicast</a></li>
+                    </ul>
+                  </li>
+                {% else %}
+                  <li class="dropdown-submenu">
+                    <a tabindex="-2">No interfaces</a>
+                  </li>
+                {% endfor %}
+                </ul>
+              </li>
+            {% else %}
+              <li>No devices</li>
+            {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <div class="span10">
+          <div class="well-small">
+            <ul class="breadcrumb">
+              <li><h3>Home <span class="divider">></span></h3></li>
+              {% if host %}
+              <li><h3>{{ host }} <span class="divider">></span></h3></li>
+              {% endif %}
+              {% if interface %}
+              <li><h3>{{ interface }} <span class="divider">></span></h3></li>
+              {% endif %}
+              {% if metric %}
+              <li class="active"><h3>{{ metric }}</h3></li>
+              {% endif %}
+            </ul>
+          </div>
+          {% block graph %}
+          <div class="well">
+            <h2>Welcome to Aster, a graphing tool for network interfaces.</h2>
+            <span>Use the drop menus on the left to navigate.</span>
+          </div>
+          {% endblock graph %}
+        </div>
+      </div>
+      <div class="row-fluid">
+        <div class="span2">
+          <span class="pull-right">mike@mikejulian.com</span>
+        </div>
+        <div class="span10">
+          <span class="pull-right">Built with Python and Bootstrap</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
