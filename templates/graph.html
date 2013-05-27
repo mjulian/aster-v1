@@ -5,25 +5,25 @@
               <a class="brand">Time periods</a>
               <ul class="nav">
                 <li {% if timeperiod == "15m" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='15m') }}">15m</a>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='15m', viewOption=viewOption, function=function) }}">15m</a>
                 </li>
                 <li {% if timeperiod == "1h" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='1h') }}">1h</a>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='1h', viewOption=viewOption, function=function) }}">1h</a>
                 </li>
                 <li {% if timeperiod == "24h" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='24h') }}">24h</a>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='24h', viewOption=viewOption, function=function) }}">24h</a>
                 </li>
                 <li {% if timeperiod == "7d" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='7d') }}">7d</a>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='7d', viewOption=viewOption, function=function) }}">7d</a>
                 </li>
                 <li {% if timeperiod == "30d" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='30d') }}">30d</a>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='30d', viewOption=viewOption, function=function) }}">30d</a>
                 </li>
                 <li {% if timeperiod == "6mo" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='6mo') }}">6mo</a>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='6mo', viewOption=viewOption, function=function) }}">6mo</a>
                 </li>
                 <li {% if timeperiod == "1y" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='1y') }}">1y</a>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='1y', viewOption=viewOption, function=function) }}">1y</a>
                 </li>
               </ul>
               <a class="brand">Custom</a>
@@ -56,16 +56,16 @@
             <div class="navbar-inner">
               <a class="brand">Options</a>
               <ul class="nav">
-                <li class="active"><a href="#">Mbps</a></li>
-                <li><a href="#">MBps</a></li>
+                <li {% if viewOption == "bps" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption='bps', function=function) }}">Bits/sec</a></li>
+                <li {% if viewOption == "Bps" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption='Bps', function=function) }}">Bytes/sec</a></li>
                 <li class="divider-vertical"></li>
               </ul>
               <ul class="nav">
                 <a class="brand">Functions</a>
-                <li class="active"><a href="#">None</a></li>
-                <li><a href="#">Average</a></li>
-                <li><a href="#">Std Dev</a></li>
-                <li><a href="#">95th</a></li>
+                <li {% if function == "none" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function='none') }}">None</a></li>
+                <li {% if function == "average" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function='average') }}">Average</a></li>
+                <li {% if function == "stddev" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function='stddev') }}">Std Dev</a></li>
+                <li {% if function == "95th" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function='95th') }}">95th</a></li>
               </ul>
             </div>
           </div>

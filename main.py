@@ -29,8 +29,8 @@ def index():
     hosts = getDevices()
     return render_template('base.html', devices=hosts)
 
-@app.route('/graph/<host>/<interface>/<metric>/<timeperiod>')
-def graph(host,interface,metric,timeperiod):
+@app.route('/graph/<host>/<interface>/<metric>/<timeperiod>/<viewOption>/<function>')
+def graph(host,interface,metric,timeperiod,viewOption,function):
     hosts = getDevices()
     timeperiods = {    # Key (canonical name): From - Until
         '15m': ['-15min', 'now'],
@@ -50,9 +50,23 @@ def graph(host,interface,metric,timeperiod):
 
     if timeperiod == "default":
         timeperiod = "1h"
+    if viewOption == "default":
+        viewOption = "Bps"
 
     rxTarget = "derivative(net.%s.%s.%s)" % (host, interface, metrics.get(metric)[0])
     txTarget = "derivative(net.%s.%s.%s)" % (host, interface, metrics.get(metric)[1])
+
+    if viewOption == "bps":
+        rxTarget = "scale(scaleToSeconds(" + rxTarget + ",1),0.125)"
+        txTarget = "scale(scaleToSeconds(" + txTarget + ",1),0.125)"
+
+    if viewOption == "Bps":
+        rxTarget = "scaleToSeconds(" + rxTarget + ",1)"
+        txTarget = "scaleToSeconds(" + txTarget + ",1)"
+
+    if function == "average":
+        rxTarget = "average(" + rxTarget + ",30)"
+        txTarget = "average(" + txTarget + ",30)"
 
     rxTarget = "alias(" + rxTarget + ",\"rx\")"
     txTarget = "alias(" + txTarget + ",\"tx\")"
@@ -60,7 +74,7 @@ def graph(host,interface,metric,timeperiod):
     graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14"
 
 
-    return render_template('graph.html', devices=hosts, host=host, interface=interface, metric=metric, timeperiod=timeperiod, graph_link=graphLink)
+    return render_template('graph.html', devices=hosts, host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function=function, graph_link=graphLink)
 
 @app.errorhandler(500)
 def internal_error(error):
