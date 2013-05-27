@@ -6,9 +6,10 @@ import socket
 import datetime
 import pickle
 import struct
+import ConfigParser
 
-ip = sys.argv[1]
-comm = sys.argv[2]
+config = ConfigParser.ConfigParser()
+config.read('config.ini')
 
 objects32 = [('1.3.6.1.2.1.2.2.1.10', 'rx'),               # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.11', 'rx-ucast'),         # Unit: Packets
@@ -35,36 +36,26 @@ objects64 = [('1.3.6.1.2.1.31.1.1.1.5', 'rx64'),           # Unit: Octets
 
 ports = defaultdict(dict)
 
-def snmpWalk(community, ip, object):
+def snmpwalk(community, ip, object):
     output = []
-    command = "/usr/bin/snmpwalk -c " + comm + " -v 2c -On " + ip + " " + object + " 2> /dev/null"
-    process = Popen(command, shell=True, stdout=PIPE)
-    returnedData = process.communicate()
-    for x in returnedData:
-        if not x is None:
-            output.append(x)
+    command = "/usr/bin/snmpbulkwalk -m '' -M '' -c " + community + " -v 2c -Oenq " + ip + " " + object
+    snmp_process = Popen(command, shell=True, stderr=PIPE, stdout=PIPE, universal_newlines=True)
+    stdout, stderr = snmp_process.communicate()
+    stdout = stdout.splitlines()
+    for x in stdout:
+        y = x.split()
+        output.append(y)
     return output
 
 def cleanData(data, context):
     snmpResults = defaultdict(dict)
-    data = data.splitlines()
-    for lines in data:
-        lines = lines.split()
-        indexNumber = lines[0].rsplit('.')[-1]
+    for oid, value in data:
+        indexNumber = oid.rsplit('.')[-1]
         if context == "descr":
-            lines[3] = lines[3].replace('/','_').replace('.','_')
-            snmpResults[indexNumber][context] = lines[3]
+            value = value.strip('\"').replace('/','_').replace('.','_')
+            snmpResults[indexNumber][context] = value
         else:
-            snmpResults[indexNumber][context] = lines[3]
-    return snmpResults
-
-def cleanPortNames(data):
-    snmpResults = []
-    for x in data:
-        x = x.splitlines()
-    for lines in x:
-        lines = lines.split()
-        snmpResults.append(lines[3])
+            snmpResults[indexNumber][context] = value
     return snmpResults
 
 def correlate(snmpResults, context):
@@ -73,19 +64,13 @@ def correlate(snmpResults, context):
     return
 
 def poll(ip, community, objects):
-    startTime = time.time()
     for oid, context in objects:
-        output = snmpWalk(comm, ip, oid)
-        if output:
-            for data in output:
-                correlate(cleanData(data, context), context)
-
+        output = snmpwalk(community, hostname, oid)
+        correlate(cleanData(output, context), context)
     for key, values in ports.items():
         ports[values['descr']] = ports.pop(key)
-    endTime = time.time() - startTime
-    print "Polling Run time:", str(datetime.timedelta(seconds=endTime))
 
-def prepGraphite():
+def prepGraphite(host):
     carbonServer = 'localhost'
     carbonPort = 2004
     sock = socket.socket()
@@ -93,30 +78,24 @@ def prepGraphite():
     startTime = time.time()
     tuples = ([])
     for key, values in ports.items():
-        hostname = ip.split('.',1)[0]
+        host = host.split('.',1)[0]
         for metricName, metricValue in values.items():
             if "descr" not in metricName:
-                tuples.append(('net.%s.%s.%s' % (hostname, key, metricName), (int(time.time()), metricValue)))
+                tuples.append(('net.%s.%s.%s' % (host, key, metricName), (int(time.time()), metricValue)))
     package = pickle.dumps(tuples, 1)
     size = struct.pack('!L', len(package))
     sock.sendall(size)
     sock.sendall(package)
-    endTime = time.time() - startTime
-    print "Graphite Run time:", str(datetime.timedelta(seconds=endTime))
 
-if sys.argv[3] == "poll":
+if sys.argv[1] == "poll":
     while True:
         try:
-            print "Starting poll"
-            poll(ip, comm, objects64)
-            prepGraphite()
-            print "Sleeping for ten seconds"
+            for hostname in config.sections():
+                for communityString in config.items(hostname):
+                    poll(hostname, communityString[1], objects64)
+                    prepGraphite(hostname)
             time.sleep(10)
         except KeyboardInterrupt:
            print "\n\n poll.py: Killed by user input.\n\n"
            sys.exit()
 
-if sys.argv[3] == "getports":
-    availablePorts = cleanPortNames(snmpWalk(comm, ip, objects32[9][0]))
-    for ports in availablePorts:
-        print ports

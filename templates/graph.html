@@ -2,7 +2,7 @@
 {% block graph %}
          <div class="navbar">
             <div class="navbar-inner">
-              <a class="brand">Time periods - Current: {{ timeperiod }}</a>
+              <a class="brand">Time periods</a>
               <ul class="nav">
                 <li {% if timeperiod == "15m" %} class="active" {% endif %}>
                   <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='15m') }}">15m</a>
@@ -70,6 +70,7 @@
             </div>
           </div>
           <div class="well">
-            <img class="img-polaroid" src="http://graphite.mikejulian.com/render?from={{ timefrom }}&until={{ timeuntil }}&width=900&height=450&target=alias(scaleToSeconds(derivative(net.{{ host }}.{{ interface }}.tx)%2C1)%2C%22tx%22)&target=alias(scaleToSeconds(derivative(net.{{ host }}.{{ interface }}.rx)%2C1)%2C%22rx%22)&hideGrid=true&_uniq=0.10868912283331156" />
+            <a href="{{ graph_link }}">Direct link to this graph</a><br />
+            <img class="img-polaroid" src="{{ graph_link }}" />
           </div>
 {% endblock graph %}
