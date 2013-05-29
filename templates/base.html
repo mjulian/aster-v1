@@ -58,8 +58,6 @@
                       <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='errors', timeperiod='default', viewOption='default', function='none') }}">Errors</a></li>
                       <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='discards', timeperiod='default', viewOption='default', function='none') }}">Discards</a></li>
                       <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='unicast', timeperiod='default', viewOption='default', function='none') }}">Unicast</a></li>
-                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='broadcast', timeperiod='default', viewOption='default', function='none') }}">Broadcast</a></li>
-                      <li><a tabindex="-2" href="{{ url_for('graph', host=device.hostname, interface=iface, metric='multicast', timeperiod='default', viewOption='default', function='none') }}">Multicast</a></li>
                     </ul>
                   </li>
                 {% else %}

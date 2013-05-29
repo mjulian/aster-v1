@@ -41,12 +41,12 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
         '6mo': ['-6mon', 'now'],
         '1y': ['-1y', 'now']}
     metrics = {    # Key (canonical name): Graphite name (rx), Graphite name (tx)
-        'throughput': ['rx64', 'tx64'],
+        'throughput': ['rx', 'tx'],
         'errors': ['rx-errors', 'tx-errors'],
         'discards': ['rx-discards', 'tx-discards'],
-        'unicast': ['rx-ucast64', 'tx-ucast64'],
-        'broadcast': ['rx-bcast64', 'tx-bcast64'],
-        'multicast': ['rx-mcast64', 'tx-mcast64']}
+        'unicast': ['rx-ucast', 'tx-ucast']}
+#        'broadcast': ['rx-bcast', 'tx-bcast64'],
+#        'multicast': ['rx-mcast64', 'tx-mcast64']}
 
     if timeperiod == "default":
         timeperiod = "1h"

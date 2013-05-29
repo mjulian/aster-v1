@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from subprocess import Popen, PIPE
 import sys
 from collections import defaultdict
@@ -7,9 +8,17 @@ import datetime
 import pickle
 import struct
 import ConfigParser
+import logging
 
 config = ConfigParser.ConfigParser()
-config.read('config.ini')
+config.read('/opt/aster/config.ini')
+lgr = logging.getLogger('aster')
+lgr.setLevel(logging.DEBUG)
+fh = logging.FileHandler('/opt/aster/aster.log')
+fh.setLevel(logging.DEBUG)
+frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(frmt)
+lgr.addHandler(fh)
 
 objects32 = [('1.3.6.1.2.1.2.2.1.10', 'rx'),               # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.11', 'rx-ucast'),         # Unit: Packets
@@ -64,6 +73,7 @@ def correlate(snmpResults, context):
     return
 
 def poll(ip, community, objects):
+    lgr.info('Polling started')
     for oid, context in objects:
         output = snmpwalk(community, hostname, oid)
         correlate(cleanData(output, context), context)
@@ -71,6 +81,7 @@ def poll(ip, community, objects):
         ports[values['descr']] = ports.pop(key)
 
 def prepGraphite(host):
+    lgr.info('Sending values to Graphite')
     carbonServer = 'localhost'
     carbonPort = 2004
     sock = socket.socket()
@@ -82,20 +93,16 @@ def prepGraphite(host):
         for metricName, metricValue in values.items():
             if "descr" not in metricName:
                 tuples.append(('net.%s.%s.%s' % (host, key, metricName), (int(time.time()), metricValue)))
+                lgr.info('Sending metric: net.%s.%s.%s' % (host, key, metricName) )
     package = pickle.dumps(tuples, 1)
     size = struct.pack('!L', len(package))
     sock.sendall(size)
     sock.sendall(package)
 
-if sys.argv[1] == "poll":
-    while True:
-        try:
-            for hostname in config.sections():
-                for communityString in config.items(hostname):
-                    poll(hostname, communityString[1], objects64)
-                    prepGraphite(hostname)
-            time.sleep(10)
-        except KeyboardInterrupt:
-           print "\n\n poll.py: Killed by user input.\n\n"
-           sys.exit()
+if __name__ == "__main__":
+    for hostname in config.sections():
+        for communityString in config.items(hostname):
+            poll(hostname, communityString[1], objects32)
+            prepGraphite(hostname)
+    sys.exit()
 
