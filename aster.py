@@ -8,10 +8,10 @@ app = Flask(__name__)
 
 graphiteServer = "graphite.mikejulian.com"
 metrics = {    # Key (canonical name): Graphite name (rx), Graphite name (tx)
-    'throughput': ['rx64', 'tx64'],
+    'throughput': ['rx', 'tx'],
     'errors': ['rx-errors', 'tx-errors'],
     'discards': ['rx-discards', 'tx-discards'],
-    'unicast': ['rx-ucast64', 'tx-ucast64'],
+    'unicast': ['rx-ucast', 'tx-ucast'],
     'broadcast': ['rx-bcast', 'tx-bcast64'],
     'multicast': ['rx-mcast64', 'tx-mcast64']}
 
@@ -54,31 +54,36 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     if viewOption == "default":
         viewOption = "Bps"
 
-    rxTarget = "derivative(net.%s.%s.%s)" % (host, interface, metrics.get(metric)[0])
-    txTarget = "derivative(net.%s.%s.%s)" % (host, interface, metrics.get(metric)[1])
+    rxTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[0])
+    txTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[1])
+
+    rxTarget = "keepLastValue(" + rxTarget + ")"
+    txTarget = "keepLastValue(" + txTarget + ")"
+
+    rxTarget = "perSecond(" + rxTarget + ")"
+    txTarget = "perSecond(" + txTarget + ")"
 
     if viewOption == "bps":
-        rxTarget = "scale(scaleToSeconds(" + rxTarget + ",1),0.125)"
-        txTarget = "scale(scaleToSeconds(" + txTarget + ",1),0.125)"
+        rxTarget = "scale(" + rxTarget + ",0.125)"
+        txTarget = "scale(" + txTarget + ",0.125)"
 
-    if viewOption == "Bps":
-        rxTarget = "scaleToSeconds(" + rxTarget + ",1)"
-        txTarget = "scaleToSeconds(" + txTarget + ",1)"
+#    elif viewOption == "Bps":
+#        rxTarget = "perSecond(" + rxTarget + ")"
+#        txTarget = "perSecond(" + txTarget + ")"
 
     if function == "average":
-        rxTarget = "average(" + rxTarget + ",30)"
-        txTarget = "average(" + txTarget + ",30)"
+        rxTarget = "movingAverage(" + rxTarget + ",30)"
+        txTarget = "movingAverage(" + txTarget + ",30)"
+
 
     rxTarget = "alias(" + rxTarget + ",\"rx\")"
     txTarget = "alias(" + txTarget + ",\"tx\")"
 
-    graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14"
+    graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14&vtitle=" + viewOption
 
-    return render_template('graph.html', devices=hosts, host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function=function, graph_link=graphLink)
+    return render_template('graph.html', metrics=metrics, devices=hosts, host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function=function, graph_link=graphLink)
 
-@app.errorhandler(500)
-def internal_error(error):
-    return "<h1>500 error</h1>"
 
 if __name__ == '__main__':
+    app.debug = True
     app.run('0.0.0.0')
