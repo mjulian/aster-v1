@@ -12,8 +12,8 @@ metrics = {    # Key (canonical name): Graphite name (rx), Graphite name (tx)
     'errors': ['rx-errors', 'tx-errors'],
     'discards': ['rx-discards', 'tx-discards'],
     'unicast': ['rx-ucast', 'tx-ucast'],
-    'broadcast': ['rx-bcast', 'tx-bcast64'],
-    'multicast': ['rx-mcast64', 'tx-mcast64']}
+    'broadcast': ['rx-bcast', 'tx-bcast'],
+    'multicast': ['rx-mcast', 'tx-mcast']}
 
 
 def getDevices():
@@ -58,8 +58,8 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     rxTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[0])
     txTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[1])
 
-    rxTarget = "keepLastValue(" + rxTarget + ")"
-    txTarget = "keepLastValue(" + txTarget + ")"
+#    rxTarget = "keepLastValue(" + rxTarget + ")"
+#    txTarget = "keepLastValue(" + txTarget + ")"
 
     rxTarget = "perSecond(" + rxTarget + ")"
     txTarget = "perSecond(" + txTarget + ")"
