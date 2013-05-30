@@ -26,6 +26,7 @@ def getDevices():
             for host in os.listdir(os.path.join(whisperStorage, folder)):
                 deviceEntry['hostname'] = host
                 for interface in os.listdir(os.path.join(whisperStorage, folder, host)):
+                    interface = interface.replace('_','/').replace('-','.')
                     deviceEntry['interfaces'].append(interface)
                 devices.append(deviceEntry.copy())
                 deviceEntry.clear()

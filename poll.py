@@ -61,7 +61,7 @@ def cleanData(data, context):
     for oid, value in data:
         indexNumber = oid.rsplit('.')[-1]
         if context == "descr":
-            value = value.strip('\"').replace('/','_').replace('.','_')
+            value = value.strip('\"').replace('/','_').replace('.','-')
             snmpResults[indexNumber][context] = value
         else:
             snmpResults[indexNumber][context] = value
