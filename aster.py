@@ -65,6 +65,8 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
         else:
             viewOption = "Bps"
 
+    metricUnit = metrics.get(metric)[2]
+
     rxTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[0])
     txTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[1])
 
@@ -88,7 +90,7 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
 
     graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14&vtitle=" + viewOptions.get(viewOption)
 
-    return render_template('graph.html', viewOptions=viewOptions, metrics=metrics, timeperiods=timeperiods, devices=hosts, host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function=function, graph_link=graphLink)
+    return render_template('graph.html', metricUnit=metricUnit, viewOptions=viewOptions, metrics=metrics, timeperiods=timeperiods, devices=hosts, host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function=function, graph_link=graphLink)
 
 
 if __name__ == '__main__':

@@ -16,9 +16,12 @@
             <div class="navbar-inner">
               <a class="brand">Options</a>
               <ul class="nav">
-              {% for vo, voName in viewOptions.iteritems() %}
-                <li {% if viewOption == vo %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=vo, function=function) }}">{{ voName }}</a></li>
-              {% endfor %}
+              {% if metricUnit == "octets" %}
+                <li {% if viewOption == 'bps' %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption='bps', function=function) }}">Bits/sec</a></li>
+                <li {% if viewOption == 'Bps' %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption='Bps', function=function) }}">Bytes/sec</a></li>
+              {% else %}
+                <li {% if viewOption == 'pps' %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption='pps', function=function) }}">Packets/sec</a></li>
+              {% endif %}
               </ul>
               <ul class="nav">
                 <a class="brand">Functions</a>
@@ -28,7 +31,7 @@
             </div>
           </div>
           <div class="well">
-            <a href="{{ graph_link }}">Direct link to this graph</a><br />
+            <a href="{{ graph_link }}" target="_blank">Direct link to this graph</a><br />
             <img class="img-polaroid" src="{{ graph_link }}" />
           </div>
 {% endblock graph %}
