@@ -10,11 +10,13 @@ import struct
 import ConfigParser
 import logging
 
-config = ConfigParser.ConfigParser()
-config.read('/opt/aster/config.ini')
+hostsConfig = ConfigParser.ConfigParser()
+hostsConfig.read('/opt/aster/hosts.ini')
+systemConfig = ConfigParser.ConfigParser()
+systemConfig.read('/opt/aster/system.ini')
 lgr = logging.getLogger('aster')
 lgr.setLevel(logging.DEBUG)
-fh = logging.FileHandler('/opt/aster/aster.log')
+fh = logging.FileHandler(systemConfig.get('system', 'logFile'))
 fh.setLevel(logging.DEBUG)
 frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(frmt)
@@ -84,7 +86,7 @@ def poll(ip, community, version, objects):
 
 def prepGraphite(host):
     lgr.info('Sending values to Graphite')
-    carbonServer = 'localhost'
+    carbonServer = systemConfig.get('system', 'carbonServer')
     carbonPort = 2004
     sock = socket.socket()
     sock.connect((carbonServer, carbonPort))
@@ -103,9 +105,9 @@ def prepGraphite(host):
     sock.sendall(package)
 
 if __name__ == "__main__":
-    for hostname in config.sections():
-        version = config.get(hostname, "Version")
-        communityString = config.get(hostname, "Community")
+    for hostname in hostsConfig.sections():
+        version = hostsConfig.get(hostname, "Version")
+        communityString = hostsConfig.get(hostname, "Community")
         if version == "1":
             poll(hostname, communityString, version, objects32)
         else:
