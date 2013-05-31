@@ -4,27 +4,11 @@
             <div class="navbar-inner">
               <a class="brand">Time periods</a>
               <ul class="nav">
-                <li {% if timeperiod == "15m" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='15m', viewOption=viewOption, function=function) }}">15m</a>
+                {% for tp in timeperiods.keys() %}
+                <li {% if timeperiod == tp %} class="active" {% endif %}>
+                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=tp, viewOption=viewOption, function=function) }}">{{ tp }}</a>
                 </li>
-                <li {% if timeperiod == "1h" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='1h', viewOption=viewOption, function=function) }}">1h</a>
-                </li>
-                <li {% if timeperiod == "24h" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='24h', viewOption=viewOption, function=function) }}">24h</a>
-                </li>
-                <li {% if timeperiod == "7d" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='7d', viewOption=viewOption, function=function) }}">7d</a>
-                </li>
-                <li {% if timeperiod == "30d" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='30d', viewOption=viewOption, function=function) }}">30d</a>
-                </li>
-                <li {% if timeperiod == "6mo" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='6mo', viewOption=viewOption, function=function) }}">6mo</a>
-                </li>
-                <li {% if timeperiod == "1y" %} class="active" {% endif %}>
-                  <a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod='1y', viewOption=viewOption, function=function) }}">1y</a>
-                </li>
+                {% endfor %}
               </ul>
             </div>
           </div>
@@ -32,9 +16,9 @@
             <div class="navbar-inner">
               <a class="brand">Options</a>
               <ul class="nav">
-                <li {% if viewOption == "bps" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption='bps', function=function) }}">Bits/sec</a></li>
-                <li {% if viewOption == "Bps" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption='Bps', function=function) }}">Bytes/sec</a></li>
-                <li class="divider-vertical"></li>
+              {% for vo, voName in viewOptions.iteritems() %}
+                <li {% if viewOption == vo %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=vo, function=function) }}">{{ voName }}</a></li>
+              {% endfor %}
               </ul>
               <ul class="nav">
                 <a class="brand">Functions</a>
