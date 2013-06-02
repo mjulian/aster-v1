@@ -40,7 +40,7 @@ def index():
     hosts = getDevices()
     return render_template('base.html', devices=hosts, metrics=metrics)
 
-@app.route('/graph/<host>/<interface>/<metric>/<timeperiod>/<viewOption>/<function>')
+@app.route('/graph/<host>/<path:interface>/<metric>/<timeperiod>/<viewOption>/<function>')
 def graph(host,interface,metric,timeperiod,viewOption,function):
     hosts = getDevices()
     timeperiods = OrderedDict()
@@ -59,6 +59,7 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
 
     if timeperiod == "default":
         timeperiod = "1h"
+
     if viewOption == "default":
         if metrics.get(metric)[2] == "packets":
             viewOption = "pps"
@@ -77,10 +78,6 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
         rxTarget = "scale(" + rxTarget + ",0.125)"
         txTarget = "scale(" + txTarget + ",0.125)"
 
-#    elif viewOption == "Bps":
-#        rxTarget = "perSecond(" + rxTarget + ")"
-#        txTarget = "perSecond(" + txTarget + ")"
-
     if function == "average":
         rxTarget = "movingAverage(" + rxTarget + ",30)"
         txTarget = "movingAverage(" + txTarget + ",30)"
@@ -90,7 +87,19 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
 
     graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14&vtitle=" + viewOptions.get(viewOption)
 
-    return render_template('graph.html', metricUnit=metricUnit, viewOptions=viewOptions, metrics=metrics, timeperiods=timeperiods, devices=hosts, host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function=function, graph_link=graphLink)
+    return render_template('graph.html',
+        metricUnit=metricUnit,
+        viewOptions=viewOptions,
+        metrics=metrics,
+        timeperiods=timeperiods,
+        devices=hosts,
+        host=host,
+        interface=interface,
+        metric=metric,
+        timeperiod=timeperiod,
+        viewOption=viewOption,
+        function=function,
+        graph_link=graphLink)
 
 
 if __name__ == '__main__':

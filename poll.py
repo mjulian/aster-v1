@@ -32,16 +32,16 @@ objects32 = [('1.3.6.1.2.1.2.2.1.10', 'rx'),               # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.20', 'tx-errors'),        # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.2', 'descr')]             # Interface name (not alias)
 
-objects64 = [('1.3.6.1.2.1.31.1.1.1.5', 'rx'),           # Unit: Octets
-             ('1.3.6.1.2.1.31.1.1.1.6', 'rx-ucast'),     # Unit: Packets
-             ('1.3.6.1.2.1.31.1.1.1.7', 'rx-mcast'),     # Unit: Packets
-             ('1.3.6.1.2.1.31.1.1.1.8', 'rx-bcast'),     # Unit: Packets
+objects64 = [('1.3.6.1.2.1.31.1.1.1.6', 'rx'),           # Unit: Octets
+             ('1.3.6.1.2.1.31.1.1.1.7', 'rx-ucast'),     # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.8', 'rx-mcast'),     # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.9', 'rx-bcast'),     # Unit: Packets
              ('1.3.6.1.2.1.2.2.1.14', 'rx-errors'),      # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.13', 'rx-discards'),    # Unit: Packets
-             ('1.3.6.1.2.1.31.1.1.1.9', 'tx'),           # Unit: Octets
-             ('1.3.6.1.2.1.31.1.1.1.10', 'tx-ucast'),    # Unit: Packets
-             ('1.3.6.1.2.1.31.1.1.1.11', 'tx-mcast'),    # Unit: Packets
-             ('1.3.6.1.2.1.31.1.1.1.12', 'tx-bcast'),    # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.10', 'tx'),           # Unit: Octets
+             ('1.3.6.1.2.1.31.1.1.1.11', 'tx-ucast'),    # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.12', 'tx-mcast'),    # Unit: Packets
+             ('1.3.6.1.2.1.31.1.1.1.13', 'tx-bcast'),    # Unit: Packets
              ('1.3.6.1.2.1.2.2.1.20', 'tx-errors'),      # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.19', 'tx-discards'),    # Unit: Packets
              ('1.3.6.1.2.1.2.2.1.2', 'descr')]           # Interface name (not alias)
@@ -98,7 +98,7 @@ def prepGraphite(host):
         for metricName, metricValue in values.items():
             if "descr" not in metricName:
                 tuples.append(('net.%s.%s.%s' % (host, key, metricName), (int(time.time()), metricValue)))
-                lgr.debug('Sending metric: net.%s.%s.%s' % (host, key, metricName) )
+                lgr.debug('Sending metric: net.%s.%s.%s, Value: %s' % (host, key, metricName, metricValue) )
     package = pickle.dumps(tuples, 1)
     size = struct.pack('!L', len(package))
     sock.sendall(size)
