@@ -21,18 +21,30 @@ metrics['multicast'] = ['rx-mcast', 'tx-mcast', 'packets']      # Packets
 def getDevices():
     whisperStorage = '/opt/graphite/storage/whisper'
     devices = []
-    deviceEntry = defaultdict(list)
+    deviceEntry = defaultdict(dict)
+    interfacesDict = defaultdict(dict)
 
     for folder in os.listdir(whisperStorage):
         if folder == "net":
             for host in os.listdir(os.path.join(whisperStorage, folder)):
                 deviceEntry['hostname'] = host
                 for interface in os.listdir(os.path.join(whisperStorage, folder, host)):
-                    interface = interface.replace('_','/').replace('-','.')
-                    deviceEntry['interfaces'].append(interface)
+                    prettyInterface = interface.replace('_','/').replace('--','.')
+                    interfacesDict['interfaces'][prettyInterface] = {}
+                    interfacesDict['interfaces'][prettyInterface]['cleanedName'] = interface
+                    interfacesDict['interfaces'][prettyInterface]['actualName'] = prettyInterface
+                deviceEntry.update(interfacesDict.copy())
                 devices.append(deviceEntry.copy())
                 deviceEntry.clear()
+                interfacesDict.clear()
     return devices
+
+def getInterfaceName(devices, hostname, interface):
+    for device in devices:
+        if device['hostname'] == hostname:
+            for iface in device['interfaces']:
+                if device['interfaces'][iface]['actualName'] == interface:
+                    return device['interfaces'][iface]['cleanedName']
 
 @app.route('/')
 @app.route('/index')
@@ -57,6 +69,8 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     viewOptions['Bps'] = 'Bytes/sec'
     viewOptions['pps'] = 'Packets/sec'
 
+    cleanedInterfaceName = getInterfaceName(hosts, host, interface)
+
     if timeperiod == "default":
         timeperiod = "1h"
 
@@ -71,8 +85,8 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     rxTargetOverlay = None
     txTargetOverlay = None
 
-    rxTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[0])
-    txTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[1])
+    rxTarget = "net.%s.%s.%s" % (host, cleanedInterfaceName, metrics.get(metric)[0])
+    txTarget = "net.%s.%s.%s" % (host, cleanedInterfaceName, metrics.get(metric)[1])
 
     rxTarget = "perSecond(" + rxTarget + ")"
     txTarget = "perSecond(" + txTarget + ")"
@@ -111,7 +125,8 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
         timeperiod=timeperiod,
         viewOption=viewOption,
         function=function,
-        graph_link=graphLink)
+        graph_link=graphLink
+     )
 
 
 if __name__ == '__main__':

@@ -21,6 +21,7 @@
         <div class="span12">
           <div class="page-header">
             <a href="{{ url_for('index') }}"><h1>Aster <small>A prettier and less prickly Cacti</small></h1></a>
+            {{ devices }}
           </div>
         </div>
       </div>
@@ -33,7 +34,7 @@
                 <li class="dropdown-submenu">
                   <a tabindex="-1">{{ device.hostname }}</a>
                   <ul class="dropdown-menu">
-                  {% for iface in device.interfaces %}
+                  {% for iface in device.interfaces.keys() %}
                     <li class="dropdown-submenu">
                     <a tabindex="-2">{{ iface }}</a>
                     <ul class="dropdown-menu">
