@@ -27,6 +27,7 @@
                 <a class="brand">Functions</a>
                 <li {% if function == "none" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function='none') }}">None</a></li>
                 <li {% if function == "average" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function='average') }}">Average</a></li>
+                <li {% if function == "95th" %} class="active" {% endif %}><a href="{{ url_for('graph', host=host, interface=interface, metric=metric, timeperiod=timeperiod, viewOption=viewOption, function='95th') }}">95th Percentile</a></li>
               </ul>
             </div>
           </div>

@@ -68,6 +68,9 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
 
     metricUnit = metrics.get(metric)[2]
 
+    rxTargetOverlay = None
+    txTargetOverlay = None
+
     rxTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[0])
     txTarget = "net.%s.%s.%s" % (host, interface, metrics.get(metric)[1])
 
@@ -82,10 +85,19 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
         rxTarget = "movingAverage(" + rxTarget + ",30)"
         txTarget = "movingAverage(" + txTarget + ",30)"
 
+    if function == "95th":
+        rxTargetOverlay = "nPercentile(" + rxTarget + ",95)"
+        txTargetOverlay = "nPercentile(" + txTarget + ",95)"
+        rxTargetOverlay = "alias(" + rxTargetOverlay + ",\"rx - 95th\")"
+        txTargetOverlay = "alias(" + txTargetOverlay + ",\"tx - 95th\")"
+
     rxTarget = "alias(" + rxTarget + ",\"rx\")"
     txTarget = "alias(" + txTarget + ",\"tx\")"
 
-    graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14&vtitle=" + viewOptions.get(viewOption)
+    if rxTargetOverlay and txTargetOverlay:
+        graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&target=" + rxTargetOverlay + "&target=" + txTargetOverlay + "&hideGrid=true&fontSize=14&vtitle=" + viewOptions.get(viewOption)
+    else:
+        graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14&vtitle=" + viewOptions.get(viewOption)
 
     return render_template('graph.html',
         metricUnit=metricUnit,
