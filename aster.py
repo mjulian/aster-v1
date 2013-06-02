@@ -9,6 +9,9 @@ app = Flask(__name__)
 
 graphiteServer = "graphite.mikejulian.com"
 
+# Create an ordereddict so that the metric options appear in this order
+# Key names show in the menu, while first and second values are Graphite metric names
+# Third value is used to decide what view options to show
 metrics = OrderedDict()
 metrics['throughput'] = ['rx', 'tx', 'octets']                  # octets
 metrics['errors'] = ['rx-errors', 'tx-errors', 'octets']        # octets
@@ -19,6 +22,23 @@ metrics['multicast'] = ['rx-mcast', 'tx-mcast', 'packets']      # Packets
 
 
 def getDevices():
+    # This function iterates through the whisper storage to determine what hosts and interfaces to show
+    # Caveat: this could result in showing devices and interfaces which are no longer active
+
+    # Dictionary comes out looking like this:
+    #    {'interfaces': 
+    #        {'ge-1/0/4.3810': {
+    #            'cleanedName': 'ge-1_0_4--3810', 
+    #            'actualName': 'ge-1/0/4.3810'
+    #            }, 
+    #         'xe-2/1/3': {
+    #             'cleanedName': 'xe-2_1_3', 
+    #             'actualName': 'xe-2/1/3'
+    #            } 
+    #        },
+    #        'hostname': 'localhost'
+    #    }
+
     whisperStorage = '/opt/graphite/storage/whisper'
     devices = []
     deviceEntry = defaultdict(dict)
@@ -29,6 +49,10 @@ def getDevices():
             for host in os.listdir(os.path.join(whisperStorage, folder)):
                 deviceEntry['hostname'] = host
                 for interface in os.listdir(os.path.join(whisperStorage, folder, host)):
+                    # Create a dict with two versions of the interface name: one that is the on-disk
+                    # name and one that is the "prettied" name. Reasoning: whisper cannot store metric names
+                    # which contain hyphens, and a period denotes a new tree--both items found in
+                    # networking gear (Cisco, Juniper)
                     prettyInterface = interface.replace('_','/').replace('--','.')
                     interfacesDict['interfaces'][prettyInterface] = {}
                     interfacesDict['interfaces'][prettyInterface]['cleanedName'] = interface
@@ -39,6 +63,8 @@ def getDevices():
                 interfacesDict.clear()
     return devices
 
+# This function takes the prettied interface name and finds the on-disk name, which
+# gets passed to the Graphite API URL
 def getInterfaceName(devices, hostname, interface):
     for device in devices:
         if device['hostname'] == hostname:
@@ -55,6 +81,9 @@ def index():
 @app.route('/graph/<host>/<path:interface>/<metric>/<timeperiod>/<viewOption>/<function>')
 def graph(host,interface,metric,timeperiod,viewOption,function):
     hosts = getDevices()
+
+    # Ordereddict to show time periods in this order
+    # Key is what's shown on the page, values get passed to Graphite API
     timeperiods = OrderedDict()
     timeperiods['15m'] = ['-15min', 'now']
     timeperiods['1h'] = ['-1h', 'now']
@@ -64,6 +93,8 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     timeperiods['6mo'] = ['-6mon', 'now']
     timeperiods['1y'] = ['-1y', 'now']
 
+    # Ordereddict to show view options in this order
+    # Key is used in the URL, value gets shown on the page
     viewOptions = OrderedDict()
     viewOptions['bps'] = 'Bits/sec'
     viewOptions['Bps'] = 'Bytes/sec'
@@ -71,17 +102,21 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
 
     cleanedInterfaceName = getInterfaceName(hosts, host, interface)
 
+    # Template uses 'default' for timeperiod, so we we set it here
     if timeperiod == "default":
         timeperiod = "1h"
 
+    # Same as above. I used Bps as default because the counter from SNMP is already in octets
     if viewOption == "default":
         if metrics.get(metric)[2] == "packets":
             viewOption = "pps"
         else:
             viewOption = "Bps"
 
+    # We use this variable to determine what view options are shown. See metrics dict above
     metricUnit = metrics.get(metric)[2]
 
+    # From here on, we start building the URL to pass to Graphite
     rxTargetOverlay = None
     txTargetOverlay = None
 

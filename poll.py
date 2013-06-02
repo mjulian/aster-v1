@@ -17,11 +17,13 @@ systemConfig.read('/opt/aster/system.ini')
 lgr = logging.getLogger('aster')
 lgr.setLevel(logging.DEBUG)
 fh = logging.FileHandler(systemConfig.get('system', 'logFile'))
+# Set this to 'logging.DEBUG' to turn on debug output
 fh.setLevel(logging.INFO)
 frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(frmt)
 lgr.addHandler(fh)
 
+# 32bit counters used for SNMPv1
 objects32 = [('1.3.6.1.2.1.2.2.1.10', 'rx'),               # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.11', 'rx-ucast'),         # Unit: Packets
              ('1.3.6.1.2.1.2.2.1.13', 'rx-discards'),      # Unit: Packets
@@ -32,13 +34,16 @@ objects32 = [('1.3.6.1.2.1.2.2.1.10', 'rx'),               # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.20', 'tx-errors'),        # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.2', 'descr')]             # Interface name (not alias)
 
+# 64bit counters for SNMPv2/v3
+# Note: errors and discards are only available in 32bit
+# Hopefully you won't have enough errors on a link to need 64bit :p
 objects64 = [('1.3.6.1.2.1.31.1.1.1.6', 'rx'),           # Unit: Octets
              ('1.3.6.1.2.1.31.1.1.1.7', 'rx-ucast'),     # Unit: Packets
              ('1.3.6.1.2.1.31.1.1.1.8', 'rx-mcast'),     # Unit: Packets
              ('1.3.6.1.2.1.31.1.1.1.9', 'rx-bcast'),     # Unit: Packets
              ('1.3.6.1.2.1.2.2.1.14', 'rx-errors'),      # Unit: Octets
              ('1.3.6.1.2.1.2.2.1.13', 'rx-discards'),    # Unit: Packets
-             ('1.3.6.1.2.1.31.1.1.1.10', 'tx'),           # Unit: Octets
+             ('1.3.6.1.2.1.31.1.1.1.10', 'tx'),          # Unit: Octets
              ('1.3.6.1.2.1.31.1.1.1.11', 'tx-ucast'),    # Unit: Packets
              ('1.3.6.1.2.1.31.1.1.1.12', 'tx-mcast'),    # Unit: Packets
              ('1.3.6.1.2.1.31.1.1.1.13', 'tx-bcast'),    # Unit: Packets
@@ -48,6 +53,9 @@ objects64 = [('1.3.6.1.2.1.31.1.1.1.6', 'rx'),           # Unit: Octets
 
 ports = defaultdict(dict)
 
+# Do the snmpwalk
+# Output looks like this:
+# 1.3.6.1.2.1.31.1.1.1.6 673527
 def snmpwalk(community, version, ip, object):
     output = []
     command = "/usr/bin/snmpbulkwalk -m '' -M '' -c " + community + " -v " + version + " -Oenq " + ip + " " + object
@@ -60,12 +68,24 @@ def snmpwalk(community, version, ip, object):
         output.append(y)
     return output
 
+# Clean up the result data in a few ways
+# Get index number and assign it as the key
+# Assign values matching the index number to their appropriate key
+# If the value is ifDescr, remove any double quotes, replace forward slashes
+# with underscores, and periods with double-dashes
+# This is due to a limitation with Whisper on-disk storage
+# We use double dashes for ease of replacement later, due to some interfaces (eg, Juniper)
+# use a hyphen in their interface names already
+#
+# Example:
+# xe-1/0/4.2 turns into xe-1_0_4--2
+# This gets changed back in aster.py
 def cleanData(data, context):
     snmpResults = defaultdict(dict)
     for oid, value in data:
         indexNumber = oid.rsplit('.')[-1]
         if context == "descr":
-            value = value.strip('\"').replace('/','_').replace('.','-')
+            value = value.strip('\"').replace('/','_').replace('.','--')
             snmpResults[indexNumber][context] = value
         else:
             snmpResults[indexNumber][context] = value
@@ -76,6 +96,10 @@ def correlate(snmpResults, context):
         ports[key][context] = values[context]
     return
 
+# Main function to start the polling
+# Of note is that we replace the index number with the Descr here
+# This gives us the port name as the key name, which is much easier to
+# deal with than the index number
 def poll(ip, community, version, objects):
     lgr.info('Polling started')
     for oid, context in objects:
@@ -84,6 +108,7 @@ def poll(ip, community, version, objects):
     for key, values in ports.items():
         ports[values['descr']] = ports.pop(key)
 
+# Send data to Carbon in pickle format (serialized) for speed
 def prepGraphite(host):
     lgr.info('Sending values to Graphite')
     carbonServer = systemConfig.get('system', 'carbonServer')
