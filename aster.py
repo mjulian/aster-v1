@@ -144,9 +144,9 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     txTarget = "alias(" + txTarget + ",\"tx\")"
 
     if rxTargetOverlay and txTargetOverlay:
-        graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&target=" + rxTargetOverlay + "&target=" + txTargetOverlay + "&hideGrid=true&fontSize=14&vtitle=" + viewOptions.get(viewOption)
+        graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&target=" + rxTargetOverlay + "&target=" + txTargetOverlay + "&hideGrid=true&fontSize=14&margin=25&vtitle=" + viewOptions.get(viewOption)
     else:
-        graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14&vtitle=" + viewOptions.get(viewOption)
+        graphLink = "http://" + graphiteServer + "/render?from=" + timeperiods.get(timeperiod)[0] + "&until=" + timeperiods.get(timeperiod)[1] + "&width=900&height=450" + "&target=" + rxTarget + "&target=" + txTarget + "&hideGrid=true&fontSize=14&margin=25&vtitle=" + viewOptions.get(viewOption)
 
     return render_template('graph.html',
         metricUnit=metricUnit,
