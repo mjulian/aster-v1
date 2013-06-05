@@ -123,8 +123,8 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     rxTarget = "net.%s.%s.%s" % (host, cleanedInterfaceName, metrics.get(metric)[0])
     txTarget = "net.%s.%s.%s" % (host, cleanedInterfaceName, metrics.get(metric)[1])
 
-    rxTarget = "perSecond(" + rxTarget + ")"
-    txTarget = "perSecond(" + txTarget + ")"
+    rxTarget = "scaleToSeconds(derivative(" + rxTarget + "),1)"
+    txTarget = "scaleToSeconds(derivative(" + txTarget + "),1)"
 
     if viewOption == "bps":
         rxTarget = "scale(" + rxTarget + ",0.125)"
