@@ -13,12 +13,12 @@ graphiteServer = "graphite.mikejulian.com"
 # Key names show in the menu, while first and second values are Graphite metric names
 # Third value is used to decide what view options to show
 metrics = OrderedDict()
-metrics['throughput'] = ['rx', 'tx', 'octets']                  # octets
-metrics['errors'] = ['rx-errors', 'tx-errors', 'octets']        # octets
-metrics['discards'] = ['rx-discards', 'tx-discards', 'packets'] # Packets
-metrics['unicast'] = ['rx-ucast', 'tx-ucast', 'packets']        # Packets
-metrics['broadcast'] = ['rx-bcast', 'tx-bcast', 'packets']      # Packets
-metrics['multicast'] = ['rx-mcast', 'tx-mcast', 'packets']      # Packets
+metrics['throughput'] = ['ifHCInbyte', 'ifHCOutbyte', 'octets']                  # octets
+metrics['errors'] = ['ifInErrors', 'ifOutErrors', 'octets']        # octets
+metrics['discards'] = ['ifInDiscards', 'ifOutDiscards', 'packets'] # Packets
+metrics['unicast'] = ['ifInUcastPkts', 'ifOutUcastPkts', 'packets']        # Packets
+metrics['broadcast'] = ['ifInBroadcastPkts', 'ifOutBroadcastPkts', 'packets']      # Packets
+metrics['multicast'] = ['ifInMulticastPkts', 'ifOutMulticastPkts', 'packets']      # Packets
 
 
 def getDevices():
@@ -39,29 +39,28 @@ def getDevices():
     #        'hostname': 'localhost'
     #    }
 
-    whisperStorage = '/opt/graphite/storage/whisper'
+    whisperStorage = '/opt/graphite/storage/whisper/diamond/mjulian/snmp/devices'
     devices = []
     deviceEntry = defaultdict(dict)
     interfacesDict = defaultdict(dict)
 
-    for folder in os.listdir(whisperStorage):
-        if folder == "net":
-            for host in os.listdir(os.path.join(whisperStorage, folder)):
-                deviceEntry['hostname'] = host
-                for interface in os.listdir(os.path.join(whisperStorage, folder, host)):
-                    # Create a dict with two versions of the interface name: one that is the on-disk
-                    # name and one that is the "prettied" name. Reasoning: whisper cannot store metric names
-                    # which contain hyphens, and a period denotes a new tree--both items found in
-                    # networking gear (Cisco, Juniper)
-                    prettyInterface = interface.replace('_','/').replace('--','.')
-                    interfacesDict['interfaces'][prettyInterface] = {}
-                    interfacesDict['interfaces'][prettyInterface]['cleanedName'] = interface
-                    interfacesDict['interfaces'][prettyInterface]['actualName'] = prettyInterface
-                deviceEntry.update(interfacesDict.copy())
-                devices.append(deviceEntry.copy())
-                deviceEntry.clear()
-                interfacesDict.clear()
+    for host in os.listdir(whisperStorage):
+        deviceEntry['hostname'] = host
+        for interface in os.listdir(os.path.join(whisperStorage, host, 'snmp')):
+            # Create a dict with two versions of the interface name: one that is the on-disk
+            # name and one that is the "prettied" name. Reasoning: whisper cannot store metric names
+            # which contain hyphens, and a period denotes a new tree--both items found in
+            # networking gear (Cisco, Juniper)
+            prettyInterface = interface.replace('_','/').replace('--','.')
+            interfacesDict['interfaces'][prettyInterface] = {}
+            interfacesDict['interfaces'][prettyInterface]['cleanedName'] = interface
+            interfacesDict['interfaces'][prettyInterface]['actualName'] = prettyInterface
+        deviceEntry.update(interfacesDict.copy())
+        devices.append(deviceEntry.copy())
+        deviceEntry.clear()
+        interfacesDict.clear()
     return devices
+
 
 # This function takes the prettied interface name and finds the on-disk name, which
 # gets passed to the Graphite API URL
@@ -80,6 +79,7 @@ def index():
 
 @app.route('/graph/<host>/<path:interface>/<metric>/<timeperiod>/<viewOption>/<function>')
 def graph(host,interface,metric,timeperiod,viewOption,function):
+    graphiteMetricBase = "diamond.mjulian.interface.devices"
     hosts = getDevices()
 
     # Ordereddict to show time periods in this order
@@ -120,11 +120,11 @@ def graph(host,interface,metric,timeperiod,viewOption,function):
     rxTargetOverlay = None
     txTargetOverlay = None
 
-    rxTarget = "net.%s.%s.%s" % (host, cleanedInterfaceName, metrics.get(metric)[0])
-    txTarget = "net.%s.%s.%s" % (host, cleanedInterfaceName, metrics.get(metric)[1])
+    rxTarget = "%s.%s.interface.%s.%s" % (graphiteMetricBase, host, cleanedInterfaceName, metrics.get(metric)[0])
+    txTarget = "%s.%s.interface.%s.%s" % (graphiteMetricBase, host, cleanedInterfaceName, metrics.get(metric)[1])
 
-    rxTarget = "scaleToSeconds(derivative(" + rxTarget + "),1)"
-    txTarget = "scaleToSeconds(derivative(" + txTarget + "),1)"
+    rxTarget = "scaleToSeconds(" + rxTarget + ",1)"
+    txTarget = "scaleToSeconds(" + txTarget + ",1)"
 
     if viewOption == "bps":
         rxTarget = "scale(" + rxTarget + ",0.125)"
